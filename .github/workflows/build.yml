@@ -28,8 +28,13 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist-src
-          Invoke-WebRequest -Uri "https://files.pythonhosted.org/packages/source/d/deepfilterlib/deepfilterlib-0.5.6.tar.gz" -OutFile "dist-src/DeepFilterLib-0.5.6.tar.gz"
-
+          $info = Invoke-RestMethod -Uri "https://pypi.org/pypi/deepfilterlib/0.5.6/json"
+          $archivo = $info.urls | Where-Object { $_.packagetype -eq "sdist" } | Select-Object -First 1
+          if (-not $archivo) {
+            throw "No se encontro el codigo fuente en PyPI"
+          }
+          Invoke-WebRequest -Uri $archivo.url -OutFile "dist-src/DeepFilterLib-0.5.6.tar.gz"
+          
       - name: Extraer codigo fuente
         shell: pwsh
         run: |
