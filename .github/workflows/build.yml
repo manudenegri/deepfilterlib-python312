@@ -1,0 +1,50 @@
+
+name: Compilar DeepFilterLib Python 3.12
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Preparar Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Instalar herramientas
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install maturin
+
+      - name: Descargar codigo fuente
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist-src
+          Invoke-WebRequest -Uri "https://files.pythonhosted.org/packages/source/d/deepfilterlib/deepfilterlib-0.5.6.tar.gz" -OutFile "dist-src/DeepFilterLib-0.5.6.tar.gz"
+
+      - name: Extraer codigo fuente
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path source
+          tar -xzf dist-src/DeepFilterLib-0.5.6.tar.gz -C source
+
+      - name: Compilar paquete
+        shell: pwsh
+        run: |
+          Set-Location source/DeepFilterLib-0.5.6
+          maturin build --release --interpreter python --out ../../wheels
+
+      - name: Guardar paquete compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepfilterlib-python312-windows
+          path: wheels/*.whl
+          if-no-files-found: error
